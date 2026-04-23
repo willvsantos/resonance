@@ -2,7 +2,12 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  output: "standalone",
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "50mb",
+    },
+  },
 };
 
 export default withSentryConfig(nextConfig, {
@@ -10,9 +15,7 @@ export default withSentryConfig(nextConfig, {
   project: process.env.SENTRY_PROJECT,
   silent: !process.env.CI,
   widenClientFileUpload: true,
-  sourcemaps: {
-    disable: true,
-  },
+  hideSourceMaps: true,
   disableLogger: true,
   automaticVercelMonitors: true,
 });
