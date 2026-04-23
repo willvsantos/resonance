@@ -1,119 +1,70 @@
 "use client";
 
-import React, { useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { useTRPC } from "@/trpc/client";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Play, Loader2 } from "lucide-react";
+import { Generation, Voice } from "@prisma/client";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { AudioPlayer } from "@/components/audio-player";
+import { formatDistanceToNow } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
-export function HistoryTable() {
-  const trpc = useTRPC();
-  const [playingId, setPlayingId] = useState<string | null>(null);
+type GenerationWithVoice = Generation & {
+  voice: Voice;
+};
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isPending,
-    isError,
-  } = useInfiniteQuery(
-    trpc.generation.list.infiniteQueryOptions(
-      { limit: 10 },
-      { getNextPageParam: (lastPage) => lastPage.nextCursor }
-    )
-  );
-
-  if (isPending) {
+export function HistoryTable({ generations }: { generations: GenerationWithVoice[] }) {
+  if (generations.length === 0) {
     return (
-      <div className="flex justify-center p-8 text-muted-foreground">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return <div className="p-8 text-destructive">Failed to load generation history.</div>;
-  }
-
-  const items = data.pages.flatMap((page) => page.items);
-
-  if (items.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 border border-dashed rounded-lg bg-card">
-        <p className="text-muted-foreground">You haven't generated any audio yet.</p>
+      <div className="flex flex-col items-center justify-center p-8 border rounded-lg border-dashed text-muted-foreground">
+        <p>No generations found yet.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border bg-card overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[80px]"></TableHead>
-              <TableHead>Text</TableHead>
-              <TableHead>Voice</TableHead>
-              <TableHead className="text-right">Characters</TableHead>
-              <TableHead className="text-right">Date</TableHead>
+    <div className="rounded-md border overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Voice</TableHead>
+            <TableHead>Text</TableHead>
+            <TableHead>Characters</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead className="text-right">Audio</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {generations.map((gen) => (
+            <TableRow key={gen.id}>
+              <TableCell className="font-medium">
+                <div className="flex flex-col">
+                  <span>{gen.voice.name}</span>
+                  <Badge variant="outline" className="w-fit text-[10px] h-4">
+                    {gen.voice.isSystem ? "System" : "Custom"}
+                  </Badge>
+                </div>
+              </TableCell>
+              <TableCell className="max-w-md">
+                <p className="truncate text-sm" title={gen.text}>
+                  {gen.text}
+                </p>
+              </TableCell>
+              <TableCell>{gen.characterCount}</TableCell>
+              <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
+                {formatDistanceToNow(new Date(gen.createdAt), { addSuffix: true })}
+              </TableCell>
+              <TableCell className="text-right min-w-[300px]">
+                <AudioPlayer audioUrl={gen.audioUrl} />
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map((generation) => (
-              <React.Fragment key={generation.id}>
-                <TableRow>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setPlayingId(playingId === generation.id ? null : generation.id)}
-                    >
-                      <Play className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                  <TableCell className="max-w-[300px] truncate" title={generation.text}>
-                    {generation.text}
-                  </TableCell>
-                  <TableCell>{generation.voiceName}</TableCell>
-                  <TableCell className="text-right">{generation.characterCount}</TableCell>
-                  <TableCell className="text-right text-muted-foreground text-sm">
-                    {new Date(generation.createdAt).toLocaleDateString()}
-                  </TableCell>
-                </TableRow>
-                {playingId === generation.id && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="bg-muted/30 p-4">
-                      <AudioPlayer audioUrl={generation.audioUrl} />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </React.Fragment>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      
-      {hasNextPage && (
-        <div className="flex justify-center pt-4">
-          <Button
-            variant="outline"
-            disabled={isFetchingNextPage}
-            onClick={() => fetchNextPage()}
-          >
-            {isFetchingNextPage ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading more...
-              </>
-            ) : (
-              "Load More"
-            )}
-          </Button>
-        </div>
-      )}
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

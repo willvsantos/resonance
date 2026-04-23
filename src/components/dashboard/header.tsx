@@ -1,23 +1,10 @@
-import React from "react";
+import { Separator } from "@/components/ui/sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
-interface DashboardHeaderProps {
-  heading: string;
-  text?: string;
-  children?: React.ReactNode;
-}
-
-export function DashboardHeader({
-  heading,
-  text,
-  children,
-}: DashboardHeaderProps) {
+export function DashboardHeader({ title }: { title: string }) {
   return (
-    <div className="flex items-center justify-between px-2">
-      <div className="grid gap-1">
-        <h1 className="text-3xl font-bold tracking-tight">{heading}</h1>
-        {text && <p className="text-muted-foreground">{text}</p>}
-      </div>
-      {children}
+    <div className="flex items-center gap-2 mb-6">
+      <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
     </div>
   );
 }

@@ -38,8 +38,6 @@ export function VoiceCard({ voice, onSelect }: VoiceCardProps) {
       </CardHeader>
       <CardContent className="pb-2">
         <div className="flex flex-wrap gap-2">
-          {/* Categories and Locales would be parsed from metadata if available, 
-              for now we show generic placeholders or handle system voices specially */}
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Globe className="size-3" />
             <span>{voice.locale || "en-US"}</span>
